@@ -95,7 +95,7 @@ void start_project(const string name) {
         fprintf(settings_c, "#include <stdio.h>\n#include \"settings.h\"\n#include \"types.h\"\n\n");
         fprintf(settings_c, "/*\n * settings.c - Project Configuration Source File\n *\n");
         fprintf(settings_c, " * This file defines default settings for the C-Rest framework.\n */\n\n");
-        fprintf(settings_c, "string APP_INSTALLED[MAX_APPS] = {NULL};\nint app_count = 0;\n\n");
+        fprintf(settings_c, "string APP_INSTALLED[MAX_APPS] = {};\n\n");
         fprintf(settings_c, "const string DEBUG = \"True\";\nconst string SECRET_KEY = \"your-secret-key\";\n\n");
         fprintf(settings_c, "const string ALLOWED_HOSTS[MAX_HOSTS] = {\"localhost\", \"127.0.0.1\", NULL};\n\n");
         fprintf(settings_c, "const string DATABASE_ENGINE = \"sqlite3\";\nconst string DATABASE_NAME = \"db.sqlite3\";\n\n");
@@ -165,22 +165,22 @@ void start_app(const string app_name) {
 
     // Write views.h (Declaring function prototypes)
     char views_h_path[512];
-    snprintf(views_h_path, sizeof(views_h_path), "%s/%s/views.h", app_name);
+    snprintf(views_h_path, sizeof(views_h_path), "app/%s/views.h", app_name);
     FILE *views_h = fopen(views_h_path, "w");
     if (views_h) {
         fprintf(views_h, "#ifndef VIEWS_H\n#define VIEWS_H\n\n");
         fprintf(views_h, "#include <stdio.h>\n\n");
-        fprintf(views_h, "void home_view();\n\n#endif\n");
+        fprintf(views_h, "void home_view(void);\n\n#endif\n");
         fclose(views_h);
     }
 
     // Write views.c (Implementation)
     char views_c_path[512];
-    snprintf(views_c_path, sizeof(views_c_path), "%s/%s/views.c", app_name);
+    snprintf(views_c_path, sizeof(views_c_path), "app/%s/views.c", app_name);
     FILE *views_c = fopen(views_c_path, "w");
     if (views_c) {
         fprintf(views_c, "#include \"views.h\"\n\n");
-        fprintf(views_c, "void home_view() {\n");
+        fprintf(views_c, "void home_view(void) {\n");
         fprintf(views_c, "    printf(\"Welcome to the %s app!\\n\");\n", app_name);
         fprintf(views_c, "}\n");
         fclose(views_c);
@@ -188,7 +188,7 @@ void start_app(const string app_name) {
 
     // Write urls.h (Declaring routes)
     char urls_h_path[512];
-    snprintf(urls_h_path, sizeof(urls_h_path), "%s/%s/urls.h", app_name);
+    snprintf(urls_h_path, sizeof(urls_h_path), "app/%s/urls.h", app_name);
     FILE *urls_h = fopen(urls_h_path, "w");
     if (urls_h) {
         fprintf(urls_h, "#ifndef URLS_H\n#define URLS_H\n\n");
@@ -203,7 +203,7 @@ void start_app(const string app_name) {
 
     // Write urls.c (Registering routes)
     char urls_c_path[512];
-    snprintf(urls_c_path, sizeof(urls_c_path), "%s/%s/urls.c", app_name);
+    snprintf(urls_c_path, sizeof(urls_c_path), "app/%s/urls.c", app_name);
     FILE *urls_c = fopen(urls_c_path, "w");
     if (urls_c) {
         fprintf(urls_c, "#include \"urls.h\"\n\n");
@@ -215,26 +215,18 @@ void start_app(const string app_name) {
 
     // Write models.c (Default model)
     char models_c_path[512];
-    snprintf(models_c_path, sizeof(models_c_path), "%s/%s/models.c", app_name);
+    snprintf(models_c_path, sizeof(models_c_path), "app/%s/models.c", app_name);
     FILE *models_c = fopen(models_c_path, "w");
     if (models_c) {
         fprintf(models_c, "#include <stdio.h>\n\n");
-        fprintf(models_c, "void define_models() {\n");
+        fprintf(models_c, "void define_models(void) {\n");
         fprintf(models_c, "    printf(\"Defining models for %s...\\n\");\n", app_name);
         fprintf(models_c, "}\n");
         fclose(models_c);
     }
 
-    // Append app to settings.c
-    // char settings_path[512];
-    // snprintf(settings_path, sizeof(settings_path), "%s/config/settings.c", project_name);
-    // FILE *settings = fopen(settings_path, "a");
-    // if (settings) {
-    //     fprintf(settings, "APP_INSTALLED[app_count++] = \"%s\";\n", app_name);
-    //     fclose(settings);
-    // }
-    snprintf(command, 512, "echo 'APP_INSTALLED[app_count++] = \"%s\";\n' >> config/settings.c", app_name);
-    system(command);
+    snprintf(command, sizeof(command), "sed -i '/string APP_INSTALLED\\[MAX_APPS\\] = {/s/}/\"%s\",}/' config/settings.c", app_name);
+    system(command);    
 
     printf("App '%s' created successfully in path '%s'!\n", app_name, project_path);
 }
