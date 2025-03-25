@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "urls.h": "c",
+        "routes.h": "c",
+        "server.h": "c"
+    }
+}

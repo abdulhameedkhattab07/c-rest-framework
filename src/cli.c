@@ -57,13 +57,13 @@ void start_project(const string name) {
     char command[512];
 
     // Create project directories
-    snprintf(command, sizeof(command), "mkdir -p %s/app %s/config %s/migrations", name, name, name);
+    snprintf(command, sizeof(command), "mkdir -p %s/app %s/config %s/migrations %s/server", name, name, name, name);
     system(command);
 
-    // Create main project files
-    snprintf(command, sizeof(command), 
-        "touch %s/app/main.c %s/app/views.c %s/config/urls.c %s/config/settings.c %s/config/settings.h %s/config/routes.c %s/migrations/models.c", 
-        name, name, name, name, name, name, name);
+    // Create core project files
+    snprintf(command, sizeof(command),
+             "touch %s/app/views.c %s/app/views.h %s/config/routes.c %s/config/settings.c %s/config/settings.h %s/server/server.c",
+             name, name, name, name, name, name);
     system(command);
 
     // Create a hidden file to mark this as a C-Rest project
@@ -76,14 +76,9 @@ void start_project(const string name) {
     FILE *settings_h = fopen(settings_h_path, "w");
     if (settings_h) {
         fprintf(settings_h, "#ifndef SETTINGS_H\n#define SETTINGS_H\n\n");
-        fprintf(settings_h, "/*\n * settings.h - Configuration Header File\n *\n");
-        fprintf(settings_h, " * This file declares global project settings for the C-Rest framework.\n */\n\n");
         fprintf(settings_h, "#define MAX_APPS 20\n#define MAX_HOSTS 5\n\n");
-        fprintf(settings_h, "extern string APP_INSTALLED[MAX_APPS];\nextern int app_count;\n");
         fprintf(settings_h, "extern const string DATABASE_ENGINE;\nextern const string DATABASE_NAME;\n");
-        fprintf(settings_h, "extern const string DEBUG;\nextern const string SECRET_KEY;\n");
-        fprintf(settings_h, "extern const string ALLOWED_HOSTS[MAX_HOSTS];\nextern const string MIDDLEWARE[];\n");
-        fprintf(settings_h, "extern const string LOG_LEVEL;\n\n#endif\n");
+        fprintf(settings_h, "extern const string ALLOWED_HOSTS[MAX_HOSTS];\n\n#endif\n");
         fclose(settings_h);
     }
 
@@ -92,46 +87,61 @@ void start_project(const string name) {
     snprintf(settings_c_path, sizeof(settings_c_path), "%s/config/settings.c", name);
     FILE *settings_c = fopen(settings_c_path, "w");
     if (settings_c) {
-        fprintf(settings_c, "#include <stdio.h>\n#include \"settings.h\"\n#include \"types.h\"\n\n");
-        fprintf(settings_c, "/*\n * settings.c - Project Configuration Source File\n *\n");
-        fprintf(settings_c, " * This file defines default settings for the C-Rest framework.\n */\n\n");
-        fprintf(settings_c, "string APP_INSTALLED[MAX_APPS] = {};\n\n");
-        fprintf(settings_c, "const string DEBUG = \"True\";\nconst string SECRET_KEY = \"your-secret-key\";\n\n");
-        fprintf(settings_c, "const string ALLOWED_HOSTS[MAX_HOSTS] = {\"localhost\", \"127.0.0.1\", NULL};\n\n");
-        fprintf(settings_c, "const string DATABASE_ENGINE = \"sqlite3\";\nconst string DATABASE_NAME = \"db.sqlite3\";\n\n");
-        fprintf(settings_c, "const string MIDDLEWARE[] = {\"SecurityMiddleware\", \"SessionMiddleware\", \"CSRFProtectionMiddleware\", NULL};\n\n");
-        fprintf(settings_c, "const string LOG_LEVEL = \"INFO\";\n");
+        fprintf(settings_c, "#include \"settings.h\"\n\n");
+        fprintf(settings_c, "const string DATABASE_ENGINE = \"sqlite3\";\nconst string DATABASE_NAME = \"db.sqlite3\";\n");
+        fprintf(settings_c, "const string ALLOWED_HOSTS[MAX_HOSTS] = {\"localhost\", \"127.0.0.1\", NULL};\n");
         fclose(settings_c);
     }
 
-    // Write urls.c (Root URL routing)
-    char urls_c_path[512];
-    snprintf(urls_c_path, sizeof(urls_c_path), "%s/config/urls.c", name);
-    FILE *urls_c = fopen(urls_c_path, "w");
-    if (urls_c) {
-        fprintf(urls_c, "#include \"routes.c\"\n\n");
-        fprintf(urls_c, "/*\n * urls.c - Root URL Configuration\n *\n");
-        fprintf(urls_c, " * This file defines the central routing structure for the application.\n */\n\n");
-        fprintf(urls_c, "Route main_routes[] = {\n    {\"/\", home_view},\n    {NULL, NULL}\n};\n");
-        fclose(urls_c);
+    // Write routes.c
+    char routes_c_path[512];
+    snprintf(routes_c_path, sizeof(routes_c_path), "%s/config/routes.c", name);
+    FILE *routes_c = fopen(routes_c_path, "w");
+    if (routes_c) {
+        fprintf(routes_c, "#include \"../app/views.h\"\n\n");
+        fprintf(routes_c, "typedef struct {\n    const string path;\n    void (*handler)();\n} Route;\n\n");
+        fprintf(routes_c, "Route ROUTES[] = {\n    {\"/\", home_view},\n    {NULL, NULL}\n};\n");
+        fclose(routes_c);
     }
 
-    // Write views.c (Handles request logic)
+    // Write views.h
+    char views_h_path[512];
+    snprintf(views_h_path, sizeof(views_h_path), "%s/app/views.h", name);
+    FILE *views_h = fopen(views_h_path, "w");
+    if (views_h) {
+        fprintf(views_h, "#ifndef VIEWS_H\n#define VIEWS_H\n\nvoid home_view();\n\n#endif\n");
+        fclose(views_h);
+    }
+
+    // Write views.c
     char views_c_path[512];
     snprintf(views_c_path, sizeof(views_c_path), "%s/app/views.c", name);
     FILE *views_c = fopen(views_c_path, "w");
     if (views_c) {
-        fprintf(views_c, "#include <stdio.h>\n\n");
-        fprintf(views_c, "/*\n * views.c - Request Handling Logic\n *\n");
-        fprintf(views_c, " * Define your views (handlers) for different URL paths here.\n */\n\n");
+        fprintf(views_c, "#include <stdio.h>\n#include \"views.h\"\n\n");
         fprintf(views_c, "void home_view() {\n    printf(\"Home Page\\n\");\n}\n");
         fclose(views_c);
     }
 
-    printf("Project '%s' created successfully with default settings!\n", name);
+    // Write server.c
+    char server_c_path[512];
+    snprintf(server_c_path, sizeof(server_c_path), "%s/server/server.c", name);
+    FILE *server_c = fopen(server_c_path, "w");
+    if (server_c) {
+        fprintf(server_c, "#include <stdio.h>\n#include \"../config/routes.c\"\n\n");
+        fprintf(server_c, "int main() {\n");
+        fprintf(server_c, "    printf(\"Starting C-Rest server...\\n\");\n");
+        fprintf(server_c, "    printf(\"Available routes:\\n\");\n");
+        fprintf(server_c, "    for (int i = 0; ROUTES[i].path != NULL; i++) {\n");
+        fprintf(server_c, "        printf(\"- %%s\\n\", ROUTES[i].path);\n    }\n");
+        fprintf(server_c, "    return 0;\n}\n");
+        fclose(server_c);
+    }
+
+    printf("Project '%s' created successfully!\n", name);
 }
 
-// Function to create a new app in a C-Rest project
+// Function to create a new app inside a C-Rest project
 void start_app(const string app_name) {
     char project_path[256];
 
@@ -155,80 +165,40 @@ void start_app(const string app_name) {
     snprintf(command, sizeof(command), "mkdir -p app/%s", app_name);
     system(command);
 
-    // Create sub-app files
-    snprintf(command, sizeof(command), "touch app/%s/urls.c app/%s/urls.h", app_name, app_name);
-    system(command);
-    snprintf(command, sizeof(command), "touch app/%s/views.c app/%s/views.h", app_name, app_name);
-    system(command);
-    snprintf(command, sizeof(command), "touch app/%s/models.c", app_name);
+    // Create app files
+    snprintf(command, sizeof(command), "touch app/%s/urls.c app/%s/urls.h app/%s/views.c app/%s/views.h", app_name, app_name, app_name, app_name);
     system(command);
 
-    // Write views.h (Declaring function prototypes)
+    // Write views.h
     char views_h_path[512];
     snprintf(views_h_path, sizeof(views_h_path), "app/%s/views.h", app_name);
     FILE *views_h = fopen(views_h_path, "w");
     if (views_h) {
-        fprintf(views_h, "#ifndef VIEWS_H\n#define VIEWS_H\n\n");
-        fprintf(views_h, "#include <stdio.h>\n\n");
-        fprintf(views_h, "void home_view(void);\n\n#endif\n");
+        fprintf(views_h, "#ifndef %s_VIEWS_H\n#define %s_VIEWS_H\n\nvoid %s_view();\n\n#endif\n", app_name, app_name, app_name);
         fclose(views_h);
     }
 
-    // Write views.c (Implementation)
+    // Write views.c
     char views_c_path[512];
     snprintf(views_c_path, sizeof(views_c_path), "app/%s/views.c", app_name);
     FILE *views_c = fopen(views_c_path, "w");
     if (views_c) {
-        fprintf(views_c, "#include \"views.h\"\n\n");
-        fprintf(views_c, "void home_view(void) {\n");
-        fprintf(views_c, "    printf(\"Welcome to the %s app!\\n\");\n", app_name);
-        fprintf(views_c, "}\n");
+        fprintf(views_c, "#include <stdio.h>\n#include \"views.h\"\n\n");
+        fprintf(views_c, "void %s_view() {\n    printf(\"Welcome to %s app!\\n\");\n}\n", app_name, app_name);
         fclose(views_c);
     }
 
-    // Write urls.h (Declaring routes)
-    char urls_h_path[512];
-    snprintf(urls_h_path, sizeof(urls_h_path), "app/%s/urls.h", app_name);
-    FILE *urls_h = fopen(urls_h_path, "w");
-    if (urls_h) {
-        fprintf(urls_h, "#ifndef URLS_H\n#define URLS_H\n\n");
-        fprintf(urls_h, "#include \"views.h\"\n\n");
-        fprintf(urls_h, "typedef struct {\n");
-        fprintf(urls_h, "    const char *path;\n");
-        fprintf(urls_h, "    void (*handler)();\n");
-        fprintf(urls_h, "} Route;\n\n");
-        fprintf(urls_h, "extern Route URLS[];\n\n#endif\n");
-        fclose(urls_h);
-    }
-
-    // Write urls.c (Registering routes)
+    // Write urls.c
     char urls_c_path[512];
     snprintf(urls_c_path, sizeof(urls_c_path), "app/%s/urls.c", app_name);
     FILE *urls_c = fopen(urls_c_path, "w");
     if (urls_c) {
-        fprintf(urls_c, "#include \"urls.h\"\n\n");
-        fprintf(urls_c, "Route URLS[] = {\n");
-        fprintf(urls_c, "    {\"/\", home_view},\n");
-        fprintf(urls_c, "    {NULL, NULL}\n};\n");
+        fprintf(urls_c, "#include \"views.h\"\n\n");
+        fprintf(urls_c, "Route %s_routes[] = {\n    {\"/%s\", %s_view},\n    {NULL, NULL}\n};\n", app_name, app_name, app_name);
         fclose(urls_c);
     }
 
-    // Write models.c (Default model)
-    char models_c_path[512];
-    snprintf(models_c_path, sizeof(models_c_path), "app/%s/models.c", app_name);
-    FILE *models_c = fopen(models_c_path, "w");
-    if (models_c) {
-        fprintf(models_c, "#include <stdio.h>\n\n");
-        fprintf(models_c, "void define_models(void) {\n");
-        fprintf(models_c, "    printf(\"Defining models for %s...\\n\");\n", app_name);
-        fprintf(models_c, "}\n");
-        fclose(models_c);
-    }
-
-    snprintf(command, sizeof(command), "sed -i '/string APP_INSTALLED\\[MAX_APPS\\] = {/s/}/\"%s\",}/' config/settings.c", app_name);
-    system(command);    
-
-    printf("App '%s' created successfully in path '%s'!\n", app_name, project_path);
+    printf("App '%s' created successfully inside the project!\n", app_name);
 }
 
 void make_migrations(void) {

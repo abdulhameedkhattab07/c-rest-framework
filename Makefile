@@ -10,16 +10,18 @@ BIN_DIR = bin
 # Files
 CLI_SRC = $(SRC_DIR)/cli.c
 SERVER_SRC = $(SRC_DIR)/server.c
+ROUTE_SRC = $(SRC_DIR)/routes.c
 CLI_OBJ = $(CLI_SRC:.c=.o)
 SERVER_OBJ = $(SERVER_SRC:.c=.o)
+ROUTE_OBJ = $(ROUTE_SRC:.c=.o)
 TARGET = $(BIN_DIR)/crest-cli
 
 # Default rule (build CLI)
 all: $(TARGET)
 
-$(TARGET): $(CLI_OBJ) $(SERVER_OBJ)
+$(TARGET): $(CLI_OBJ) $(SERVER_OBJ) $(ROUTE_OBJ)
 	@mkdir -p $(BIN_DIR)
-	$(CC) $(CFLAGS) -o $(TARGET) $(CLI_OBJ) $(SERVER_OBJ)
+	$(CC) $(CFLAGS) -o $(TARGET) $(CLI_OBJ) $(SERVER_OBJ) $(ROUTE_OBJ)
 
 # Compile object files
 $(SRC_DIR)/%.o: $(SRC_DIR)/%.c $(INCLUDE_DIR)/%.h
